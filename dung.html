@@ -1,0 +1,316 @@
+
+
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<meta name="Author" content="임지수/김범규)">
+	<meta name="Description" content="졸라맨 똥피하기의 자바스크립트 버전">
+	<meta name="keywords" content="자바스크립트,javascript,졸라맨,똥피하기,웹게임">
+	<title>졸라맨 똥피하기 웹버전</title>
+	<style>
+		body{background-color:#e5e5e5;font-size:11pt;font-family:dotum;font-weight:bold;}
+		
+		.dungs{position:absolute;font-size:1pt;}
+
+		#msg{position:absolute;text-align:center;font-size:9pt;font-family:dotum;color:#663333;font-weight:bold;}
+		#msgStep1{padding-top:150px}
+		#msgStep2{padding-top:205px}
+		#msgStep3{padding-top:205px}
+
+		#dungstotal{position:absolute;font-weight:bold;font-size:12pt;color:#663333}
+		#gametable{position:absolute;background-color:#ffffff;border:1px solid #333333;}
+		#character{position:absolute;}
+	</style>
+
+
+	<script>
+
+	//기준위치
+	var start_x=100;
+	var start_y=100;
+
+	//게임크기
+	var gametable_w=300;
+	var gametable_h=407;
+
+	//캐릭터크기
+	var character_w=16;
+	var character_h=28;
+
+	//덩의 크기
+	var dungs_w=20;
+	var dungs_h=17;
+
+	//덩 이미지
+	var dungimg = "./files/dong.gif";
+
+	//캐릭터이동
+	var charMoveTime=15;
+	var charMoveWidth=0;//이동량
+	var charMoveAddspeed=0.3;//이동량 증가량
+
+	//덩 만드는 시간
+	var dungsMakeTime=150;
+
+	//덩 내려오는 속도
+	var dunsDropTime=10;
+
+	//키플래그
+	var movingLeft=false;
+	var movingRight=false;
+	var gameOver=false;
+	var pageStep=1;
+
+	//임시값
+	tmp_charMoveWidth=charMoveWidth;
+
+	function main(){
+		pageview(1);
+		setGame();
+	}
+
+	function setGame(){
+		setGametable();
+		setCharacter();
+		showCharacterImg(front);
+	}
+
+	function setGametable(){
+		gametable.style.width=gametable_w;
+		gametable.style.height=gametable_h;
+
+		gametable.style.left=start_x;
+		gametable.style.top=start_y;
+	
+		dungstotal.style.width=45;
+		dungstotal.style.height=22;
+		dungstotal.style.left=start_x+5;
+		dungstotal.style.top=start_y+5;
+
+		msg.style.left=start_x;
+		msg.style.top=start_y;
+		msg.style.width=gametable_w;
+	}
+
+	function setCharacter(){
+		character.style.width=character_w;
+		character.style.height=character_h;
+
+		character.style.left=start_x+((gametable_w-character_w)/2);
+		character.style.top=start_y+gametable_h-character_h;
+	}
+
+	function keydown(num){
+		if(pageStep==1){ //첫화면일때
+			if(num==32){
+				gamestart();
+				pageview(2);
+				setTimeout("msgStep2.style.display='none'",1000);
+			}
+		}
+		else if(pageStep==3){ //죽었을때
+			if(num==32){
+				pageview(1);
+			}
+		}
+		else if(gameOver){ //게임오버시
+			if(num==32){
+				gamestart();
+			}
+		}
+		else{ //게임중
+			if(num==37 && movingLeft==false){
+				movingLeft=true;
+				movingRight=false;
+				tmp_charMoveWidth=charMoveWidth;
+				moveLeft(tmp_charMoveWidth);
+				showCharacterImg(left);
+			}
+			else if(num==39 && movingRight==false){
+				movingRight=true;
+				movingLeft=false;
+				tmp_charMoveWidth=charMoveWidth;
+				moveRight(tmp_charMoveWidth);
+				showCharacterImg(right);
+			}
+		}
+	}
+
+	function moveLeft(){
+		if(movingLeft){
+			var charleft=character.style.left.substr(0,character.style.left.length-2)-0;
+			
+			if(charleft-start_x<tmp_charMoveWidth){
+				movingLeft=false;
+				character.style.left=start_x;
+			}
+			else{
+				tmp_charMoveWidth=tmp_charMoveWidth+charMoveAddspeed;
+				character.style.left=charleft-tmp_charMoveWidth;
+				setTimeout(moveLeft,charMoveTime);
+			}
+		}
+	}
+	
+	function moveRight(){
+		if(movingRight){
+			var charleft=character.style.left.substr(0,character.style.left.length-2)-0;
+			
+			if((start_x+gametable_w)-(charleft+character_w)<tmp_charMoveWidth){
+				movingRight=false;
+				character.style.left=start_x+gametable_w-character_w;
+			}
+			else{
+				tmp_charMoveWidth=tmp_charMoveWidth+charMoveAddspeed;
+				character.style.left=charleft+tmp_charMoveWidth;
+				setTimeout(moveRight,charMoveTime);
+			}
+		}
+	}
+
+	function keyup(num){
+		if(num==37)			movingLeft=false;
+		else if(num==39)	movingRight=false;
+		
+		if(movingLeft) showCharacterImg(left);
+		else if(movingRight) showCharacterImg(right);
+		else if(gameOver) showCharacterImg(die);
+		else showCharacterImg(front);
+	}
+
+	function gamestart(){
+		gameOver=false;
+		setGame();
+		gametable.innerHTML="";
+		dungstotal_cur.innerHTML="0";
+		makedungs(0);
+	}
+
+	function pageview(step){
+		pageStep=step;
+
+		msgStep1.style.display='none';
+		msgStep2.style.display='none';
+		msgStep3.style.display='none';
+
+		if(step==1){
+			msgStep1.style.display='';
+			dungstotal.style.display='none';
+			character.style.display='none';
+			gametable.innerHTML="";
+		}
+		if(step==2){
+			msgStep2.style.display='';
+			dungstotal.style.display='';
+			character.style.display='';
+		}
+		if(step==3){
+			msgStep3.style.display='';
+		}
+	}
+
+	function makedungs(dungsno){
+		if(!gameOver){
+			var dungsObj = document.createElement('div');
+			dungsObj.id = 'dungs_' + dungsno;
+			dungsObj.style.width = dungs_w;
+			dungsObj.style.height = dungs_h;
+			dungsObj.style.left = Math.floor(Math.random() * (gametable_w-dungs_w));
+			dungsObj.className = 'dungs';
+			dungsObj.innerHTML = "<img src='"+dungimg+"'>";
+
+			gametable.appendChild(dungsObj);
+
+			drop_down("dungs_"+dungsno,0);
+			setTimeout("makedungs('"+(dungsno-0+1)+"')",dungsMakeTime);
+		}
+	}
+	var c=0;
+	function drop_down(dungsid,speed){
+		if(!gameOver){
+			var dungsobj=document.getElementById(dungsid);
+			var dungstop=parseFloat(dungsobj.style.top) || 0;
+			var dungsleft=parseFloat(dungsobj.style.left) || 0;
+			var charactertop=parseFloat(character.style.top) || 0;
+			var characterleft=parseFloat(character.style.left) || 0;
+
+			/* 충돌체크 시작 */
+			if(dungstop+start_y>charactertop-dungs_h && dungstop+start_y<charactertop+character_h){
+				if(dungsleft+start_x>characterleft-dungs_w && dungsleft+start_x<characterleft+character_w){
+					showCharacterImg(die);
+					movingRight=false;
+					movingLeft=false;
+					gameOver=true;
+					pageview(3);
+					return false;
+				}
+			}
+			/* 충돌체크 종료 */
+			dungsobj.style.top=dungstop+speed;
+
+			if(dungstop<gametable_h-start_y+80){
+				if(!speed) speed = 2;
+				if(speed<17)speed=speed*1.02;
+				requestAnimationFrame(function(){
+					drop_down(dungsid,speed)
+				});
+			}
+			else{
+				gametable.removeChild(dungsobj);
+				dungstotal_cur.innerHTML = parseInt(dungstotal_cur.innerHTML, 10) + 1;
+				if(dungstotal_cur.innerHTML-0>dungstotal_max.innerHTML-0) dungstotal_max.innerHTML=dungstotal_cur.innerHTML;
+			}
+		}
+	}
+	function showCharacterImg(id){
+		front.style.display='none';
+		left.style.display='none';
+		right.style.display='none';
+		die.style.display='none';
+		id.style.display='';
+	}
+	</script>
+</head> 
+
+<form action = "http://cspro.sogang.ac.kr/~cse20121631/files/main.php" method =post>  
+
+<button id = "test" name = "send" value = "">랭킹 등록하기</button>
+</form>
+<body onload="main()" onkeydown="keydown(event.keyCode);" onkeyup="keyup(event.keyCode)">
+	<!-- 게임테이블 -->
+	<div id="gametable" style="width: 300px; height: 407px; left: 100px; top: 100px;"></div>
+
+	<!-- 캐릭터레이어 -->
+	<div id="character" style="display: none; width: 16px; height: 28px; left: 242px; top: 479px;">
+		<img src="./files/front.gif" id="front" style="">
+		<img src="./files/left.gif" id="left" style="display: none;">
+		<img src="./files/right.gif" id="right" style="display: none;">
+		<img src="./files/die.gif" id="die" style="display: none;">
+	</div>
+
+	<!-- 점수레이어 -->
+	<div id="dungstotal" style="display: none; width: 45px; height: 22px; left: 105px; top: 105px;">
+		<div id="dungstotal_max">0</div>
+		<div id="dungstotal_cur">0</div>
+	</div>
+
+	<!-- 메시지 레이어 시작-->
+	<div id="msg" style="left: 100px; top: 100px; width: 300px;">
+		<!-- Step1 : 인사말 -->
+			
+		<div id="msgStep1" style="">
+			<h2>졸라맨 똥피하기</h2><blink>(시작하려면 스페이스바를 누르세요)</blink>
+		</div>
+
+		<!-- Step2 : Ready -->
+		<div id="msgStep2" style="display: none;">R E A D Y ?</div>
+
+		<!-- Step3 : Dead -->
+		<div id="msgStep3" style="display: none;">D E A D</div>
+	</div>
+	<!-- 메시지 레이어 끝-->
+
+	<div>
+	</div>
+
+
+</body></html>
